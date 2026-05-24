@@ -50,7 +50,16 @@ func main() {
 	t.AppendRows([]table.Row{{1, "Версия", config.GlobalConfig.AppVersion}, {2, "Дата и время запуска", config.GlobalConfig.StartAt.String()}, {3, "Сервис", "SPTools-backend"}, {4, "Режим работы", string(config.GlobalConfig.Node)}, {5, "Имя базы данных (MongoDB)", mongoDB.Name()}})
 	fmt.Println(t.Render())
 
-	engine := gin.Default()
+	engine := gin.New()
+
+	engine.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		Skip: func(c *gin.Context) bool {
+			return c.ClientIP() == "172.28.0.1" && c.Request.URL.Path == "/api/info"
+		},
+	}))
+
+	engine.Use(gin.Recovery())
+
 	DB = database.SetupDataBase(engine, mongoDB)
 	if err := DB.CreateIndexes(context.Background()); err != nil {
 		logger.Fatal("Не удалось создать индексы", "err", err)
