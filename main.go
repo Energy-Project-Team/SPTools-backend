@@ -47,7 +47,13 @@ func main() {
 	t := table.NewWriter()
 	t.SetCaption("Информация о приложении")
 	t.AppendHeader(table.Row{"№П/п", "Параметр", "Значение"})
-	t.AppendRows([]table.Row{{1, "Версия", config.GlobalConfig.AppVersion}, {2, "Дата и время запуска", config.GlobalConfig.StartAt.String()}, {3, "Сервис", "SPTools-backend"}, {4, "Режим работы", string(config.GlobalConfig.Node)}, {5, "Имя базы данных (MongoDB)", mongoDB.Name()}})
+	t.AppendRows([]table.Row{
+		{1, "Версия", config.GlobalConfig.AppVersion},
+		{2, "Дата и время запуска", config.GlobalConfig.StartAt.String()},
+		{3, "Сервис", "SPTools-backend"},
+		{4, "Режим работы", string(config.GlobalConfig.Node)},
+		{5, "Имя базы данных (MongoDB)", mongoDB.Name()},
+	})
 	fmt.Println(t.Render())
 
 	engine := gin.New()
