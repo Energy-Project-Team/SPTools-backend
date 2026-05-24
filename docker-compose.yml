@@ -1,0 +1,22 @@
+# Copyright (C) 2026 Energy Project Team
+# SPDX-License-Identifier: AGPL-3.0-only
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  sptools-backend-app:
+    container_name: sptools-backend
+    restart: unless-stopped
+    build:
+      context: .
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+      - ./spworlds.yaml:/app/spworlds.yaml:ro
+    ports:
+      - 4042:4042
+    logging: *default-logging

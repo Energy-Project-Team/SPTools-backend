@@ -1,0 +1,64 @@
+# Copyright (C) 2026 Energy Project Team
+# SPDX-License-Identifier: AGPL-3.0-only
+servers:
+  - id: spm
+    name: СПм
+    displayName: СПмини
+    ips:
+      - spm.spworlds.ru
+      - spm.spworlds.org
+    enabled: true
+
+    card:
+      id: ""
+      token: ""
+
+    features:
+      calling: true
+      advertisings: true
+
+    calling:
+      webhooks:
+        - service: banker
+          name: Банкир
+          roleId: "0000000000000000000"
+          webhook: "https://discord.com/api/webhooks/..."
+          imageUrl: "https://example.com/banker.png"
+
+        - service: fib
+          name: ФБР
+          roleId: "0000000000000000000"
+          webhook: "https://discord.com/api/webhooks/..."
+          imageUrl: "https://example.com/fib.png"
+
+        - service: detective
+          name: Детектив
+          roleId: "0000000000000000000"
+          webhook: "https://discord.com/api/webhooks/..."
+          imageUrl: "https://example.com/detective.png"
+
+        - service: guide
+          name: Гид
+          roleId: "0000000000000000000"
+          webhook: "https://discord.com/api/webhooks/..."
+          imageUrl: "https://example.com/guide.png"
+
+
+  - id: sp
+    name: СП
+    displayName: СП
+    ips:
+      - sp.spworlds.ru
+      - sp.spworlds.org
+    enabled: true
+
+    card:
+      id: ""
+      token: ""
+
+    features:
+      calling: false
+      advertisings: true
+
+    calling:
+      webhooks:
