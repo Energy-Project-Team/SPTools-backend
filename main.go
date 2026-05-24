@@ -76,7 +76,7 @@ func main() {
 
 	modPublic := publicOptional.Group("/mod/:serverId/v1").Use(middleware.ServerMiddleware())
 	modPublic.GET("/authorization/sse", mod.V1SSEAuthorize)
-	modPublic.GET("/authorization/callback", mod.V1OAuthCallback)
+	publicOptional.GET("/mod/v1/authorization/callback", mod.V1OAuthCallback)
 	modPublic.GET("/advertisings", mod.Advertisings)
 
 	modPrivate := private.Group("/mod/:serverId/v1").Use(middleware.ServerMiddleware())

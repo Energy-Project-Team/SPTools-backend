@@ -195,12 +195,6 @@ func (sc *ModControllers) V1SSEAuthorize(c *gin.Context) {
 }
 
 func (sc *ModControllers) V1OAuthCallback(c *gin.Context) {
-	server := middleware.CurrentServer(c)
-	if server.ID == "" {
-		c.Error(http_errors.ServerNotFound)
-		return
-	}
-
 	code := strings.TrimSpace(c.Query("code"))
 	state := strings.TrimSpace(c.Query("state"))
 	errorParam := strings.TrimSpace(c.Query("error"))
@@ -272,7 +266,7 @@ func (sc *ModControllers) V1OAuthCallback(c *gin.Context) {
 			"client_secret": config.GlobalConfig.DiscordClientSecret,
 			"grant_type":    "authorization_code",
 			"code":          code,
-			"redirect_uri":  fmt.Sprintf(config.GlobalConfig.DiscordRedirectURL, server.ID),
+			"redirect_uri":  config.GlobalConfig.DiscordRedirectURL,
 			"scope":         "identify",
 		}).
 		SetSuccessResult(&tokenData).
