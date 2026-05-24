@@ -153,7 +153,7 @@ func (sc *ModControllers) V1SSEAuthorize(c *gin.Context) {
 		return
 	}
 
-	params := url.Values{"client_id": {config.GlobalConfig.DiscordClientID}, "redirect_uri": {config.GlobalConfig.DiscordRedirectURL}, "response_type": {"code"}, "scope": {"identify"}, "state": {state}}
+	params := url.Values{"client_id": {config.GlobalConfig.DiscordClientID}, "redirect_uri": {fmt.Sprintf(config.GlobalConfig.DiscordRedirectURL, server.ID)}, "response_type": {"code"}, "scope": {"identify"}, "state": {state}}
 	authURL := fmt.Sprintf("https://discord.com/api/oauth2/authorize?%s", params.Encode())
 
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
@@ -195,6 +195,12 @@ func (sc *ModControllers) V1SSEAuthorize(c *gin.Context) {
 }
 
 func (sc *ModControllers) V1OAuthCallback(c *gin.Context) {
+	server := middleware.CurrentServer(c)
+	if server.ID == "" {
+		c.Error(http_errors.ServerNotFound)
+		return
+	}
+
 	code := strings.TrimSpace(c.Query("code"))
 	state := strings.TrimSpace(c.Query("state"))
 	errorParam := strings.TrimSpace(c.Query("error"))
@@ -266,7 +272,7 @@ func (sc *ModControllers) V1OAuthCallback(c *gin.Context) {
 			"client_secret": config.GlobalConfig.DiscordClientSecret,
 			"grant_type":    "authorization_code",
 			"code":          code,
-			"redirect_uri":  config.GlobalConfig.DiscordRedirectURL,
+			"redirect_uri":  fmt.Sprintf(config.GlobalConfig.DiscordRedirectURL, server.ID),
 			"scope":         "identify",
 		}).
 		SetSuccessResult(&tokenData).

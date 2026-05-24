@@ -85,9 +85,9 @@ func LoadConfig(appVersion string) error {
 	GlobalConfig.DiscordClientSecret = os.Getenv("DISCORD_CLIENT_SECRET")
 
 	if GlobalConfig.Node == models.Development {
-		GlobalConfig.DiscordRedirectURL = "http://localhost:4011/api/mod/spm/v1/authorization/callback"
+		GlobalConfig.DiscordRedirectURL = "http://localhost:4011/api/mod/%f/v1/authorization/callback"
 	} else {
-		GlobalConfig.DiscordRedirectURL = "https://sptools.energyproject.dev/callback"
+		GlobalConfig.DiscordRedirectURL = "https://sptools.energyproject.dev/api/mod/%f/v1/authorization/callback"
 	}
 
 	GlobalConfig.GithubToken = os.Getenv("GITHUB_TOKEN")
