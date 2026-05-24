@@ -221,7 +221,12 @@ func (sc *ModControllers) V1OAuthCallback(c *gin.Context) {
 	minecraftUUID := strings.ReplaceAll(claimString(claims, "minecraft_uuid"), "-", "")
 	serverID := claimString(claims, "server_id")
 	if sseID == "" || minecraftUUID == "" || serverID == "" || claimInt64(claims, "exp") < time.Now().Unix() {
-		logger.Warn("state не содержит обязательные поля", "sseID", sseID, "minecraftUUID", minecraftUUID, "serverID", serverID)
+		logger.Warn(
+			"state не содержит обязательные поля",
+			"sseID", sseID,
+			"minecraftUUID", minecraftUUID,
+			"serverID", serverID,
+		)
 		c.Error(http_errors.AuthorizationInvalidState)
 		return
 	}
@@ -237,36 +242,68 @@ func (sc *ModControllers) V1OAuthCallback(c *gin.Context) {
 	if errorParam == "access_denied" {
 		logger.Warn("пользователю отказано в авторизации")
 		select {
-		case session.Events <- map[string]any{"event": "error", "error": "Authorization denied by user"}:
+		case session.Events <- map[string]any{
+			"event": "error",
+			"error": "Authorization denied by user",
+		}:
 		default:
 		}
 		c.Error(http_errors.AuthorizationAccessDenied)
 		return
 	}
 
-	client := req.C().SetTimeout(15*time.Second).SetCommonHeader("User-Agent", "Energy-Project-Team/SPTools-backend/"+config.GlobalConfig.AppVersion)
+	client := req.C().
+		SetTimeout(15*time.Second).
+		SetCommonHeader(
+			"User-Agent",
+			"Energy-Project-Team/SPTools-backend/"+config.GlobalConfig.AppVersion,
+		)
+
 	var tokenData discordTokenResponse
-	resp, err := client.R().SetFormData(map[string]string{"client_id": config.GlobalConfig.DiscordClientID, "client_secret": config.GlobalConfig.DiscordClientSecret, "grant_type": "authorization_code", "code": code, "redirect_uri": config.GlobalConfig.DiscordRedirectURL, "scope": "identify"}).SetSuccessResult(&tokenData).Post("https://discord.com/api/oauth2/token")
+	resp, err := client.R().
+		SetFormData(map[string]string{
+			"client_id":     config.GlobalConfig.DiscordClientID,
+			"client_secret": config.GlobalConfig.DiscordClientSecret,
+			"grant_type":    "authorization_code",
+			"code":          code,
+			"redirect_uri":  config.GlobalConfig.DiscordRedirectURL,
+			"scope":         "identify",
+		}).
+		SetSuccessResult(&tokenData).
+		Post("https://discord.com/api/oauth2/token")
+
 	if err != nil {
 		logger.Error("не удалось получить токен Discord", "err", err)
 		c.Error(http_errors.AuthorizationTokenRequest)
 		return
 	}
 	if !resp.IsSuccessState() || tokenData.AccessToken == "" {
-		logger.Error("не удалось получить токен Discord", "status", resp.StatusCode, "body", resp.String())
+		logger.Error(
+			"не удалось получить токен Discord",
+			"status", resp.StatusCode,
+			"body", resp.String(),
+		)
 		c.Error(http_errors.AuthorizationTokenRequest)
 		return
 	}
 
 	var discordUser discordUserResponse
-	resp, err = client.R().SetHeader("Authorization", "Bearer "+tokenData.AccessToken).SetSuccessResult(&discordUser).Get("https://discord.com/api/users/@me")
+	resp, err = client.R().
+		SetHeader("Authorization", "Bearer "+tokenData.AccessToken).
+		SetSuccessResult(&discordUser).
+		Get("https://discord.com/api/users/@me")
+
 	if err != nil {
 		logger.Error("не удалось получить пользовательские данные Discord", "err", err)
 		c.Error(http_errors.AuthorizationUserDataRequest)
 		return
 	}
 	if !resp.IsSuccessState() || discordUser.ID == "" {
-		logger.Error("не удалось получить данные пользователя Discord", "status", resp.StatusCode, "body", resp.String())
+		logger.Error(
+			"не удалось получить данные пользователя Discord",
+			"status", resp.StatusCode,
+			"body", resp.String(),
+		)
 		c.Error(http_errors.AuthorizationUserDataRequest)
 		return
 	}
@@ -277,28 +314,53 @@ func (sc *ModControllers) V1OAuthCallback(c *gin.Context) {
 		return
 	}
 	spworldsUser, err := spworldsClient.User(discordUser.ID)
-	if err != nil || strings.ReplaceAll(*spworldsUser.UUID, "-", "") != minecraftUUID {
-		logger.Warn("игрок не найден на SP Worlds или UUID не совпал", "serverId", serverID, "discordID", discordUser.ID, "err", err, "spworldsUser", spworldsUser)
+	if err != nil || spworldsUser == nil || spworldsUser.UUID == nil || strings.ReplaceAll(*spworldsUser.UUID, "-", "") != minecraftUUID {
+		logger.Warn(
+			"игрок не найден на SP Worlds или UUID не совпал",
+			"serverId", serverID,
+			"discordID", discordUser.ID,
+			"err", err,
+			"spworldsUser", spworldsUser,
+		)
 		c.Error(http_errors.AuthorizationSPWorldsMismatch)
 		return
 	}
 
 	minecraftProfile, err := sc.PlayerDB.GetProfileByUUID(minecraftUUID)
-	if err != nil || minecraftProfile.Username == "" || !strings.EqualFold(minecraftProfile.Username, *spworldsUser.Username) {
-		logger.Warn("несоответствие ников", "serverId", serverID, "minecraftUUID", minecraftUUID, "expected", spworldsUser.Username, "actual", minecraftProfile.Username, "err", err)
+	if err != nil ||
+		minecraftProfile.Username == "" ||
+		spworldsUser.Username == nil ||
+		!strings.EqualFold(minecraftProfile.Username, *spworldsUser.Username) {
+		logger.Warn(
+			"несоответствие ников",
+			"serverId", serverID,
+			"minecraftUUID", minecraftUUID,
+			"expected", spworldsUser.Username,
+			"actual", minecraftProfile.Username,
+			"err", err,
+		)
 		c.Error(http_errors.AuthorizationSPWorldsMismatch)
 		return
 	}
 
 	user, err := sc.DataBase.UpsertUserLogin(c, minecraftUUID, discordUser.ID, serverID)
 	if err != nil {
-		logger.Error("не удалось создать или обновить пользователя", "serverId", serverID, "discordID", discordUser.ID, "minecraftUUID", minecraftUUID, "err", err)
+		logger.Error(
+			"не удалось создать или обновить пользователя",
+			"serverId", serverID,
+			"discordID", discordUser.ID,
+			"minecraftUUID", minecraftUUID,
+			"err", err,
+		)
 		c.Error(http_errors.AuthorizationCreateUser)
 		return
 	}
 	if user.Status != "active" {
 		select {
-		case session.Events <- map[string]any{"event": "error", "error": "User is not active"}:
+		case session.Events <- map[string]any{
+			"event": "error",
+			"error": "User is not active",
+		}:
 		default:
 		}
 		c.Error(http_errors.AuthorizationUserNotFound)
@@ -307,7 +369,13 @@ func (sc *ModControllers) V1OAuthCallback(c *gin.Context) {
 
 	now := time.Now()
 	ttl := time.Duration(config.GlobalConfig.JWTTokenExpireMinutes) * time.Minute
-	token, err := sc.JWT.CreateToken(map[string]interface{}{"sub": user.ID, "ver": user.TokenVersion, "iat": now.Unix(), "exp": now.Add(ttl).Unix()})
+
+	token, err := sc.JWT.CreateToken(map[string]interface{}{
+		"sub": user.ID,
+		"ver": user.TokenVersion,
+		"iat": now.Unix(),
+		"exp": now.Add(ttl).Unix(),
+	})
 	if err != nil {
 		logger.Error("не удалось сгенерировать JWT", "userUUID", user.ID, "err", err)
 		c.Error(http_errors.AuthorizationCreateToken)
@@ -315,17 +383,36 @@ func (sc *ModControllers) V1OAuthCallback(c *gin.Context) {
 	}
 
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("jeff", token, int(ttl.Seconds()), "/", "", config.GlobalConfig.Node == models.Production, true)
+	c.SetCookie(
+		"jeff",
+		token,
+		int(ttl.Seconds()),
+		"/",
+		"",
+		config.GlobalConfig.Node == models.Production,
+		true,
+	)
 
 	select {
-	case session.Events <- map[string]any{"event": "authorized", "serverId": serverID, "userId": user.ID}:
+	case session.Events <- map[string]any{
+		"event":     "token",
+		"serverId":  serverID,
+		"userId":    user.ID,
+		"token":     token,
+		"expiresAt": now.Add(ttl).Unix(),
+	}:
 	default:
-		logger.Error("не удалось отправить authorized в SSE: канал переполнен")
-		c.Error(models.NewCustomError(http.StatusInternalServerError, "Failed to send authorization event", "error.server.authorization.sse.sendToken"))
+		logger.Error("не удалось отправить token в SSE: канал переполнен")
+		c.Error(models.NewCustomError(
+			http.StatusInternalServerError,
+			"Failed to send authorization token event",
+			"error.server.authorization.sse.sendToken",
+		))
 		return
 	}
 
 	logger.Info("Авторизация прошла успешно", "serverId", serverID, "discordID", discordUser.ID, "minecraftUUID", minecraftUUID, "userUUID", user.ID)
+
 	c.JSON(http.StatusOK, models.NewCustomResponse(http.StatusOK, "Authorization successful"))
 }
 
