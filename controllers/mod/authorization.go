@@ -154,7 +154,7 @@ func (sc *ModControllers) V1SSEAuthorize(c *gin.Context) {
 	}
 
 	params := url.Values{"client_id": {config.GlobalConfig.DiscordClientID}, "redirect_uri": {config.GlobalConfig.DiscordRedirectURL}, "response_type": {"code"}, "scope": {"identify"}, "state": {state}}
-	authURL := fmt.Sprintf(config.GlobalConfig.DiscordAPIOrigin + "/api/oauth2/authorize?%s", params.Encode())
+	authURL := fmt.Sprintf("https://discord.com/api/oauth2/authorize?%s", params.Encode())
 
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
