@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 dc = docker compose
 
-up: build
+up:
 	$(dc) down
 	$(dc) up -d
 

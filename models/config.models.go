@@ -28,6 +28,7 @@ type Config struct {
 	DiscordClientID     string
 	DiscordClientSecret string
 	DiscordRedirectURL  string
+	DiscordAPIOrigin    string
 
 	StartAt time.Time
 }

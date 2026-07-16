@@ -55,6 +55,7 @@ func LoadConfig(appVersion string) error {
 
 		"DISCORD_CLIENT_ID",
 		"DISCORD_CLIENT_SECRET",
+		"DISCORD_API_ORIGIN",
 	}
 
 	var missingKeys []string
@@ -83,6 +84,7 @@ func LoadConfig(appVersion string) error {
 
 	GlobalConfig.DiscordClientID = os.Getenv("DISCORD_CLIENT_ID")
 	GlobalConfig.DiscordClientSecret = os.Getenv("DISCORD_CLIENT_SECRET")
+	GlobalConfig.DiscordAPIOrigin = os.Getenv("DISCORD_API_ORIGIN")
 
 	if GlobalConfig.Node == models.Development {
 		GlobalConfig.DiscordRedirectURL = "http://localhost:4011/api/mod/v1/authorization/callback"
